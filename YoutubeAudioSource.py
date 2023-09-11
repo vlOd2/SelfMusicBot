@@ -45,6 +45,8 @@ class YoutubeAudioSource(discord.PCMVolumeTransformer):
         data = await asyncio.get_event_loop().run_in_executor(None, lambda: youtubedl.extract_info(query, download=False))
 
         if "entries" in data:
+            if len(data["entries"]) < 1:
+                raise ValueError("The query has returned 0 results")
             data = data["entries"][0]
 
         # Calculate the duration if it doesn't exist (and also round it down)

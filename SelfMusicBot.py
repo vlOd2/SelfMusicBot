@@ -85,10 +85,15 @@ class SelfMusicBot(discord.Client):
                     await message.reply(":x: You must be an administrator to execute that command! (defined in the config)")
                     return
 
-            await cmd_handler.func(self, message, channel, guild, args)
+            try:
+                await cmd_handler.func(self, message, channel, guild, args)
+            except Exception as ex:
+                self.logger.error(f"The command \"{cmd}\" has ran into an un-handled exception:")
+                self.logger.exception(ex)
+                await message.reply(f":x: The command has ran into an un-handled exception: {ex}")
         else:
             self.logger.warn(f"\"{cmd}\" is not a valid command!")
-            await message.reply(":x: Invalid command!")
+            await message.reply(":x: Invalid command! Check \"help\" for a list of available commands")
 
     async def stream_data_voice_channel(self, data, callback):
         if not self.get_voice_client():
