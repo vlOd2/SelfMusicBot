@@ -41,6 +41,12 @@ class YoutubeAudioSource(discord.PCMVolumeTransformer):
     
     @classmethod
     async def get_data_from_query(clazz, query):
+        flat_data = await clazz.get_raw_data_from_query(query, True)
+        flat_length = len(flat_data["entries"]) if "entries" in flat_data else 0
+        
+        if flat_length > 1:
+            raise ValueError("Playlists are not supported")
+
         youtubedl = yt_dlp.YoutubeDL(YOUTUBEDL_OPTIONS)
         data = await asyncio.get_event_loop().run_in_executor(None, lambda: youtubedl.extract_info(query, download=False))
 
@@ -60,6 +66,6 @@ class YoutubeAudioSource(discord.PCMVolumeTransformer):
     @classmethod
     async def get_raw_data_from_query(clazz, query, flat=False):
         options = YOUTUBEDL_OPTIONS.copy()
-        options["extract_flat"] = True
+        options["extract_flat"] = flat
         youtubedl = yt_dlp.YoutubeDL(options)
         return await asyncio.get_event_loop().run_in_executor(None, lambda: youtubedl.extract_info(query, download=False))
