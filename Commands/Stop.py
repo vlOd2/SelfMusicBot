@@ -2,7 +2,7 @@ import discord
 from Commands.CommandHandler import CommandDeclaration, CommandHandler
 from SelfMusicBot import SelfMusicBot
 
-@CommandDeclaration("stop", CommandHandler("Stops the current song and clears the queue", needs_admin=True))
+@CommandDeclaration("stop", CommandHandler("Stops the current song and clears the queue"))
 async def cmd_stop(instance : SelfMusicBot, 
              message : discord.message.Message, 
              channel : discord.channel.TextChannel, 

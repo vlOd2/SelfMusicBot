@@ -1,9 +1,10 @@
 import discord
 import logging
 import asyncio
+import YoutubeDL
 from Config import Config
 from Commands.CommandHandler import REGISTERED_CMDS, CommandHandler
-from YoutubeAudioSource import YoutubeAudioSource
+from FFmpegAudioSource import FFmpegAudioSource
 from typing import Any
 from time import time
 
@@ -17,26 +18,28 @@ class SelfMusicBot(discord.Client):
         self._voice_client : (discord.voice_client.VoiceClient | None) = None
         self.voice_volume = self.config.DEFAULT_VOICE_VOLUME
         self.music_queue : list[dict[str, Any]] = []
-        self.is_searching = False
+        self.is_resolving = False
         self.suppress_queue_stream_on_stop = False
     
     async def on_ready(self):
         self.logger = logging.getLogger("SelfMusicBot")
         self.logger.info(f"Logged in as {self.user}")
-        await self.change_presence(activity=discord.activity.Game("music to you"))
 
-        if self.config.OPERATING_GUILD != None and self.config.VOICE_CHANNEL != None:
-            guild = self.get_guild(self.config.OPERATING_GUILD)
-            if not guild:
-                self.logger.warn("Invalid operating guild specified in config!")
-                return
-            
-            channel = guild.get_channel(self.config.VOICE_CHANNEL)
-            if not channel or not isinstance(channel, discord.channel.VoiceChannel):
-                self.logger.warn("Invalid voice channel specified in config!")
-                return
-            
-            self.voice_channel = channel
+        guild = self.get_guild(self.config.OPERATING_GUILD)
+        if not guild:
+            self.logger.fatal("Invalid operating guild specified in config!")
+            exit(1)
+        
+        channel = guild.get_channel(self.config.VOICE_CHANNEL)
+        if not channel or not isinstance(channel, discord.channel.VoiceChannel):
+            self.logger.fatal("Invalid voice channel specified in config!")
+            exit(1)
+        
+        self.voice_channel = channel
+        self.logger.info(f"Guild: {guild.name} ({guild.id})")
+        self.logger.info(f"Voice channel: {self.voice_channel.name} ({self.voice_channel.id})")
+
+        await self.change_presence(activity=discord.activity.Game("music to you"))
 
     async def on_message(self, message : discord.message.Message):
         if message.author == self.user or message.author.bot or not isinstance(message.channel, discord.channel.TextChannel):
@@ -63,6 +66,7 @@ class SelfMusicBot(discord.Client):
 
             if self.is_banned(message.author) and not self.is_administrator(message.author):
                 self.logger.warn(f"Banned user ({message.author}) attempted to execute a command!")
+                await message.reply(":hammer: You are not allowed to use commands!")
                 return
 
             if cmd_handler.needs_join_voice_channel:
@@ -85,6 +89,10 @@ class SelfMusicBot(discord.Client):
                     await message.reply(":x: You must be an administrator to execute that command! (defined in the config)")
                     return
 
+            #if not self.is_administrator(message.author):
+            #    await message.reply(":construction: Bot under construction, commands only available to administrators")
+            #    return
+
             try:
                 await cmd_handler.func(self, message, channel, guild, args)
             except Exception as ex:
@@ -102,7 +110,7 @@ class SelfMusicBot(discord.Client):
             return
         
         try:
-            audio_source = await YoutubeAudioSource.get_from_data(data, self.voice_volume)
+            audio_source = await FFmpegAudioSource.get_instance(data, self.voice_volume)
         except Exception as ex:
             await callback(str(ex))
             return
@@ -151,9 +159,26 @@ class SelfMusicBot(discord.Client):
         self.logger.info("Getting next item from queue...")
 
         if (len(self.music_queue) > 0):
-            async def stream_callback(error_msg): pass
+            async def stream_callback(error_msg): 
+                if error_msg:
+                    self.logger.error(f"Next queue item stream callback resulted in error: {error_msg}")
+            self.is_resolving = True
             audio_data = self.music_queue.pop(0)
-            await self.stream_data_voice_channel(audio_data, stream_callback)
+
+            try:
+                if audio_data["__is_flat_queue"]:
+                    discord_user_id = audio_data["__discord_user_id"]
+                    is_flat_queue = audio_data["__is_flat_queue"]
+                    audio_data = await YoutubeDL.get_query_data(audio_data["url"])
+                    audio_data["__discord_user_id"] = discord_user_id
+                    audio_data["__is_flat_queue"] = is_flat_queue
+                    
+                await self.stream_data_voice_channel(audio_data, stream_callback)
+            except Exception as ex:
+                self.logger.error(f"Unable to play next item from queue: {ex}")
+                await self.stream_next_queue_item()
+            finally:
+                self.is_resolving = False
         else:
             self.logger.info("Nothing to stream from the queue")
 

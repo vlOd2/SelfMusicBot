@@ -32,3 +32,6 @@ def get_progress_bar(blocks_done, size=10):
             progress_bar += ":black_large_square:"
     
     return progress_bar
+
+def get_logger_file_name():
+    return datetime.now().strftime("%H-%M-%S %d.%m.%Y.log")

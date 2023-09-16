@@ -1,15 +1,12 @@
 import discord
 import asyncio
 import Utils
+import YoutubeDL
 from Commands.CommandHandler import CommandDeclaration, CommandHandler
 from SelfMusicBot import SelfMusicBot
-from YoutubeAudioSource import YoutubeAudioSource
 from .Stream import cmd_stream
 
-@CommandDeclaration("search", CommandHandler("Searches a query and provides the results",
-                                           needs_join_voice_channel=True, 
-                                           needs_listening_executor=True, 
-                                           needs_same_guild=True))
+@CommandDeclaration("search", CommandHandler("Searches a query and provides the results"))
 async def cmd_search(instance : SelfMusicBot, 
              message : discord.message.Message, 
              channel : discord.channel.TextChannel, 
@@ -19,8 +16,8 @@ async def cmd_search(instance : SelfMusicBot,
         await message.reply(":x: No query specified!")
         return
 
-    if instance.is_searching:
-        await message.reply(":x: Cannot search for another query when already searching")
+    if instance.is_resolving:
+        await message.reply(":x: Cannot resolve for another query when already resolving")
         return
 
     query = " ".join(args)
@@ -28,14 +25,14 @@ async def cmd_search(instance : SelfMusicBot,
     search_msg = await message.reply(f":hourglass: Resolving query `{query}`...")
 
     try:
-        instance.is_searching = True
-        search_data = await YoutubeAudioSource.get_raw_data_from_query(f"ytsearch10:{query}", True)
+        instance.is_resolving = True
+        search_data = await YoutubeDL.get_flat_query_raw_data(f"ytsearch10:{query}")
         search_entries = search_data["entries"]
     except Exception as ex:
         await message.reply(f":x: An error has occured: {ex}")
         return
     finally:
-        instance.is_searching = False
+        instance.is_resolving = False
 
     if not "entries" in search_data or len(search_entries) < 1:
         await message.reply(":x: No results were found")
@@ -44,21 +41,27 @@ async def cmd_search(instance : SelfMusicBot,
     search_msg_content = ":mag: Search entries:\n\n"
     for index, entry in enumerate(search_entries):
         title = Utils.strip_unicode(entry["title"])
-        search_msg_content += f"`{index}.` [{title}](<{entry['url']}>)\n"
+        search_msg_content += f"{index}\. [`{title}`](<{entry['url']}>)\n"
 
     await search_msg.edit(search_msg_content)
     search_msg_reactions = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
     valid_msg_reactions = []
+    received_valid_reaction_event = asyncio.Event()
 
     for i in range(len(search_entries)):
         await search_msg.add_reaction(search_msg_reactions[i])
         valid_msg_reactions.append(search_msg_reactions[i])
 
+
     async def add_reaction(reaction : discord.Reaction, user : discord.User):
-        if not str(reaction.emoji) in valid_msg_reactions:
-            await search_msg.edit(":x: Invalid reaction!")
+        if user.id != message.author.id:
             return
         
+        if not str(reaction.emoji) in valid_msg_reactions:
+            return
+
+        received_valid_reaction_event.set()
+
         match str(reaction.emoji):
             case "0️⃣":
                 await cmd_stream(instance, message, channel, guild, [search_entries[0]["url"]])
@@ -81,5 +84,13 @@ async def cmd_search(instance : SelfMusicBot,
             case "9️⃣":
                 await cmd_stream(instance, message, channel, guild, [search_entries[9]["url"]])
 
-    await instance.wait_for("reaction_add", check=lambda reaction, user: 
-                            asyncio.run_coroutine_threadsafe(add_reaction(reaction, user), instance.loop))
+    while not received_valid_reaction_event.is_set():
+        instance.logger.info("Search command -> waiting for valid reaction")
+        await instance.wait_for("reaction_add", check=lambda reaction, user: 
+                                asyncio.run_coroutine_threadsafe(add_reaction(reaction, user), instance.loop))
+        try:
+            await asyncio.wait_for(received_valid_reaction_event.wait(), 1)
+            instance.logger.info("Search command -> received valid reaction")
+            break
+        except TimeoutError:
+            instance.logger.info("Search command -> timed out whilst waiting for valid reaction, retrying...")

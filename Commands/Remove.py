@@ -2,10 +2,7 @@ import discord
 from Commands.CommandHandler import CommandDeclaration, CommandHandler
 from SelfMusicBot import SelfMusicBot
 
-@CommandDeclaration("remove", CommandHandler("Removes a song from the queue",
-                                           needs_join_voice_channel=True, 
-                                           needs_listening_executor=False, 
-                                           needs_same_guild=True))
+@CommandDeclaration("remove", CommandHandler("Removes a song from the queue"))
 async def cmd_remove(instance : SelfMusicBot, 
              message : discord.message.Message, 
              channel : discord.channel.TextChannel, 
