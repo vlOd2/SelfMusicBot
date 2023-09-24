@@ -16,11 +16,12 @@ def setup_logger():
 
     logger_formatter = logging.Formatter("%(asctime)s [%(levelname)s] [%(name)s] %(message)s", "%H:%M:%S")
     logger_stream_handler.setFormatter(logger_formatter)
-    logger_file_handler.setFormatter(logger_file_handler)
+    logger_file_handler.setFormatter(logger_formatter)
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logger.addHandler(logger_stream_handler)
+    logger.addHandler(logger_file_handler)
 
 def load_token():
     logger = logging.getLogger()
