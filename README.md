@@ -2,9 +2,6 @@
 A music bot designed to be hosted on normal Discord accounts
 ## ⚠ USING THIS SELF-BOT IS AGAINST DISCORD'S TOS AND MAY GET YOUR ACCOUNT BANNED
 
-# Archival Notice
-This project was made more as a test, so it wasn't meant to be a maintained project
-
 # Required packages
 This bot needs the following packages: `PyNaCl, discord.py-self, yt-dlp`<br>
 - Windows: `python -m pip install PyNaCl discord.py-self yt-dlp`
@@ -16,5 +13,5 @@ This bot needs FFmpeg and FFprobe to be in the path environment variable<br>
 To add them to the path environment variable on Windows, you can move both of them in `C:\Windows`
 
 # But why?
-This self-bot was made as a test for [Omniarchive](https://omniarchive.uk) due to it lacking a proper music bot<br>
-This code base will be used for a proper normal bot for them
+This self-bot was made as a test, for [Omniarchive](https://omniarchive.uk) due to them lacking a proper music bot.<br>
+But now it is a proper music self-bot 
