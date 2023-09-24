@@ -12,7 +12,7 @@ Check the wiki page of the proper bot [here](https://github.com/vlOd2/PYMusicBot
 
 # ❓ But why?
 This self-bot was made as a test, for [Omniarchive](https://omniarchive.uk) due to them lacking a proper music bot.<br>
-But now it is a proper music self-bot 
+But now it is a proper music self-bot + there weren't any other good music self-bots
 
 # 👨‍💻 Contributing
 You may proceed with the following steps if you wish to contribute to this project
