@@ -2,6 +2,12 @@
 A music bot designed to be hosted on normal Discord accounts
 ## ⚠ USING THIS IS AGAINST DISCORD'S TOS AND MAY GET YOUR ACCOUNT BANNED
 
+# 📌 Features
+- Robust
+- Uses FFmpeg so it can play basically any file format with any codec
+- Less chances of it breaking because it can only be hosted on one Discord server only
+- Works on regular Discord accounts so you can play music on any Discord server without administrative permissions
+
 # 🔧 How to setup
 Check the wiki page of the proper bot [here](https://github.com/vlOd2/PYMusicBot/wiki/Setup) for a guide on setup (but use your account's token instead of a bot one. An alt is recommended)
 
