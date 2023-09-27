@@ -2,6 +2,9 @@
 A music bot designed to be hosted on normal Discord accounts
 ## ⚠ USING THIS IS AGAINST DISCORD'S TOS AND MAY GET YOUR ACCOUNT BANNED
 
+# 📚 Archival notice
+This project wasn't meant to be a proper thing, it served more as a code base for the proper bot version
+
 # 📌 Features
 - Robust (because it can only be hosted on one Discord server only)
 - Uses FFmpeg so it can play basically any file format with any codec
